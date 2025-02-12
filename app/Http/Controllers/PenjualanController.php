@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
-// Import Model Penjualan
 use App\Models\Penjualan;
 use App\Models\Pelanggan;
+use App\Models\DetailPenjualan;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class PenjualanController extends Controller
 {
@@ -22,8 +24,7 @@ class PenjualanController extends Controller
         $pelanggan = Pelanggan::all();
         return view('penjualan.index', compact('penjualan', 'pelanggan'));
     }
-    
-        
+
     /**
      * Show the form for creating a new penjualan.
      *
@@ -31,9 +32,7 @@ class PenjualanController extends Controller
      */
     public function create(): View
     {
-        // Fetch pelanggan for the dropdown selection
         $pelanggan = Pelanggan::all();
-
         return view('penjualan.create', compact('pelanggan'));
     }
 
@@ -43,23 +42,23 @@ class PenjualanController extends Controller
      * @param Request $request
      * @return RedirectResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'TanggalPenjualan' => 'required|date',
             'PelangganID' => 'required|exists:pelanggan,PelangganID',
         ]);
-    
-        // Create the new Penjualan record with TotalHarga set to 0
-        $penjualan = Penjualan::create([
+
+        // Create the new Penjualan record
+        Penjualan::create([
             'TanggalPenjualan' => $validated['TanggalPenjualan'],
             'TotalHarga' => 0, // Default value
             'PelangganID' => $validated['PelangganID'],
         ]);
-    
+
         return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil ditambahkan.');
     }
-    
+
     /**
      * Show the details of a specific penjualan.
      *
@@ -68,9 +67,7 @@ class PenjualanController extends Controller
      */
     public function show($id): View
     {
-        // Get the specific penjualan record along with pelanggan details
-        $penjualan = Penjualan::with('pelanggan')->where('PenjualanID', $id)->firstOrFail();
-
+        $penjualan = Penjualan::with('pelanggan')->findOrFail($id);
         return view('penjualan.show', compact('penjualan'));
     }
 
@@ -82,11 +79,8 @@ class PenjualanController extends Controller
      */
     public function edit($id): View
     {
-        // Get the penjualan record
-        $penjualan = Penjualan::where('PenjualanID', $id)->firstOrFail();
-        // Get pelanggan list for selection
+        $penjualan = Penjualan::findOrFail($id);
         $pelanggan = Pelanggan::all();
-
         return view('penjualan.edit', compact('penjualan', 'pelanggan'));
     }
 
@@ -99,17 +93,15 @@ class PenjualanController extends Controller
      */
     public function update(Request $request, $id): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'TanggalPenjualan' => 'required|date',
             'TotalHarga' => 'required|numeric|min:0',
             'PelangganID' => 'required|exists:pelanggan,PelangganID',
         ]);
 
-        // Find penjualan by PenjualanID
-        $penjualan = Penjualan::where('PenjualanID', $id)->firstOrFail();
-
         // Update penjualan data
-        $penjualan->update($request->all());
+        $penjualan = Penjualan::findOrFail($id);
+        $penjualan->update($validated);
 
         return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil diperbarui!');
     }
@@ -122,10 +114,25 @@ class PenjualanController extends Controller
      */
     public function destroy($id): RedirectResponse
     {
-        // Find and delete the record
-        $penjualan = Penjualan::where('PenjualanID', $id)->firstOrFail();
+        $penjualan = Penjualan::findOrFail($id);
         $penjualan->delete();
 
         return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil dihapus!');
     }
+
+    /**
+     * Export penjualan data to PDF.
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportPDF()
+    {
+        $penjualan = Penjualan::with(['pelanggan', 'detailPenjualan.produk'])->get();
+    
+        $pdf = PDF::loadView('penjualan.pdf', compact('penjualan'))
+                  ->setPaper('a4', 'landscape'); // Optional: Set landscape format
+    
+        return $pdf->download('laporan_penjualan.pdf');
+    }
+    
 }

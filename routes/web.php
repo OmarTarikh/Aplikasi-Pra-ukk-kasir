@@ -9,16 +9,17 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-Route::get('/users', [UserController::class, 'index'])->name('users.index')->middleware('auth');
+// ✅ Correct Export Routes
+Route::get('penjualan/export-pdf', [PenjualanController::class, 'exportPDF'])->name('penjualan.exportPDF');
+Route::get('detailpenjualan/export-pdf', [DetailPenjualanController::class, 'exportPDF'])->name('detailpenjualan.exportPDF');
 
-// Redirect root to login or dashboard
+// ✅ Redirect root to login or dashboard
 Route::get('/', function () {
     return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
-// Guest Routes (Only for users who are NOT logged in)
+// ✅ Guest Routes (Only for users who are NOT logged in)
 Route::middleware(['guest'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -26,23 +27,25 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-// Protected Routes (Only accessible when logged in)
+// ✅ Protected Routes (Only accessible when logged in)
 Route::middleware(['auth'])->group(function () {
-    Route::get('/pelanggan', function () {
-        return view('pelanggan');
-    })->name('dashboard');
+    // ✅ Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // ✅ User Management
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+
+    // ✅ Resource Controllers
     Route::resource('detailpenjualan', DetailPenjualanController::class);
     Route::resource('produk', ProdukController::class);
     Route::resource('penjualan', PenjualanController::class);
     Route::resource('pelanggan', PelangganController::class);
 
-    Route::get('/detailpenjualan/export-pdf', [DetailPenjualanController::class, 'exportPdf'])->name('detailpenjualan.export-pdf');
-    
-    Route::get('/get-total-harga/{penjualanID}', function ($penjualanID) {
-        $totalHarga = \App\Models\DetailPenjualan::where('PenjualanID', $penjualanID)->sum('Subtotal');
-        return response()->json(['total_harga' => $totalHarga]);
-    });
 
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+    // ✅ API Route: Get Total Harga (Moved to Controller)
+    Route::get('/get-total-harga/{penjualanID}', [DetailPenjualanController::class, 'getTotalHarga'])
+        ->name('detailpenjualan.getTotalHarga');
+
+    // ✅ Logout Route
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

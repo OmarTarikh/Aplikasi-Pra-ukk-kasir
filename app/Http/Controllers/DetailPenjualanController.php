@@ -25,17 +25,6 @@ class DetailPenjualanController extends Controller
     
         return view('detailpenjualan.index', compact('detailpenjualan', 'penjualan', 'produk'));
     }
-
-    public function exportPdf()
-    {
-        $detailPenjualan = DetailPenjualan::with(['penjualan', 'produk'])->get();
-        
-        $pdf = Pdf::loadView('detailpenjualan.pdf', compact('detailPenjualan'))
-                ->setPaper('a4', 'landscape');
-
-        return $pdf->download('detail_penjualan.pdf');
-    }
-
     
     /**
      * Store a newly created detail penjualan in storage.
@@ -132,4 +121,30 @@ class DetailPenjualanController extends Controller
 
         return redirect()->route('detailpenjualan.index')->with('success', 'Detail Penjualan berhasil dihapus!');
     }
+        /**
+     * Export DetailPenjualan data to PDF.
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportPDF()
+    {
+        $detailPenjualan = DetailPenjualan::with(['penjualan', 'produk'])->get();
+    
+        $pdf = PDF::loadView('detailpenjualan.pdf', compact('detailPenjualan'))
+                  ->setPaper('a4', 'landscape');
+    
+        return $pdf->download('laporan_detail_penjualan.pdf');
+    }
+        /**
+     * Show the details of a specific detail penjualan.
+     *
+     * @param int $id
+     * @return View
+     */
+    public function show($id): View
+    {
+        $detailPenjualan = DetailPenjualan::with(['penjualan', 'produk'])->findOrFail($id);
+        return view('detailpenjualan.show', compact('detailPenjualan'));
+    }
+
 }
