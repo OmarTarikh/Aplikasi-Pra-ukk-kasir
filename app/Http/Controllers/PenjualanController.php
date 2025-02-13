@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Barryvdh\DomPDF\Facade\Pdf;
-
+use Illuminate\Support\Facades\DB; // Query Builder untuk memanggil store procedure
 
 class PenjualanController extends Controller
 {
@@ -49,11 +49,10 @@ class PenjualanController extends Controller
             'PelangganID' => 'required|exists:pelanggan,PelangganID',
         ]);
 
-        // Create the new Penjualan record
-        Penjualan::create([
-            'TanggalPenjualan' => $validated['TanggalPenjualan'],
-            'TotalHarga' => 0, // Default value
-            'PelangganID' => $validated['PelangganID'],
+        // Panggil store procedure TambahPenjualan
+        DB::statement("CALL TambahPenjualan(?, ?)", [
+            $validated['TanggalPenjualan'],
+            $validated['PelangganID']
         ]);
 
         return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil ditambahkan.');
@@ -99,7 +98,7 @@ class PenjualanController extends Controller
             'PelangganID' => 'required|exists:pelanggan,PelangganID',
         ]);
 
-        // Update penjualan data
+        // Update penjualan data tanpa store procedure
         $penjualan = Penjualan::findOrFail($id);
         $penjualan->update($validated);
 
@@ -114,8 +113,8 @@ class PenjualanController extends Controller
      */
     public function destroy($id): RedirectResponse
     {
-        $penjualan = Penjualan::findOrFail($id);
-        $penjualan->delete();
+        // Panggil store procedure HapusPenjualan
+        DB::statement("CALL HapusPenjualan(?)", [$id]);
 
         return redirect()->route('penjualan.index')->with('success', 'Penjualan berhasil dihapus!');
     }
@@ -130,9 +129,8 @@ class PenjualanController extends Controller
         $penjualan = Penjualan::with(['pelanggan', 'detailPenjualan.produk'])->get();
     
         $pdf = PDF::loadView('penjualan.pdf', compact('penjualan'))
-                  ->setPaper('a4', 'landscape'); // Optional: Set landscape format
+                  ->setPaper('a4', 'landscape');
     
         return $pdf->download('laporan_penjualan.pdf');
     }
-    
 }
