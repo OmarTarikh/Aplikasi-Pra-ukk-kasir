@@ -1,6 +1,6 @@
                 @extends('layouts.app')
 
-                @section('title', 'Data Penjualan')
+                @section('title', 'Data Detail Penjualan')
                 
                 @section('content')
 
