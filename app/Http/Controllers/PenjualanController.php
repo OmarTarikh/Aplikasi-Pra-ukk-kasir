@@ -129,7 +129,7 @@ class PenjualanController extends Controller
         $penjualan = Penjualan::with(['pelanggan', 'detailPenjualan.produk'])->get();
     
         $pdf = PDF::loadView('penjualan.pdf', compact('penjualan'))
-                  ->setPaper('a4', 'landscape');
+                ->setPaper('a4', 'landscape');
     
         return $pdf->download('laporan_penjualan.pdf');
     }

@@ -35,7 +35,7 @@
             @foreach($penjualan as $index => $data)
                 <tr>
                     <td>{{ $index + 1 }}</td>
-                    <td>{{ $data->id }}</td>
+                    <td>{{ $data->PenjualanID }}</td>
                     <td>{{ $data->TanggalPenjualan }}</td>
                     <td>Rp {{ number_format($data->TotalHarga, 2, ',', '.') }}</td>
                     <td>{{ $data->pelanggan->NamaPelanggan ?? '-' }}</td>
